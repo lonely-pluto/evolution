@@ -8683,9 +8683,16 @@ process_content_for_html (EHTMLEditorView *view)
 static gboolean
 show_lose_formatting_dialog (EHTMLEditorView *view)
 {
-	gint result;
-	GtkWidget *toplevel, *dialog;
+	gint result, spacing_message_area, spacing_parent;
+	GtkWidget *toplevel, *dialog, *check, *container, *widget;
 	GtkWindow *parent = NULL;
+	GSettings *settings;
+
+	settings = e_util_ref_settings ("org.gnome.evolution.mail");
+	if (!g_settings_get_boolean (settings, "prompt-on-composer-mode-switch")) {
+		g_object_unref (settings);
+		return TRUE;
+	}
 
 	toplevel = gtk_widget_get_toplevel (GTK_WIDGET (view));
 
@@ -8705,7 +8712,27 @@ show_lose_formatting_dialog (EHTMLEditorView *view)
 		_("_Lose formatting"), GTK_RESPONSE_OK,
 		NULL);
 
+	container = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
+	check = gtk_check_button_new_with_mnemonic (
+		_("Do not _show this message again"));
+	widget = gtk_message_dialog_get_message_area (GTK_MESSAGE_DIALOG (dialog));
+	spacing_message_area = gtk_box_get_spacing (GTK_BOX (widget));
+	widget = gtk_widget_get_parent (widget);
+	spacing_parent = gtk_box_get_spacing (GTK_BOX (widget));
+
+	gtk_widget_set_margin_left (check, spacing_message_area + spacing_parent);
+	gtk_widget_set_margin_right (check, spacing_message_area + spacing_parent);
+
+	gtk_box_pack_start (GTK_BOX (container), check, FALSE, FALSE, 0);
+	gtk_widget_show (check);
+
 	result = gtk_dialog_run (GTK_DIALOG (dialog));
+
+	g_settings_set_boolean (
+		settings,
+		"prompt-on-composer-mode-switch",
+		!gtk_toggle_button_get_active (
+			GTK_TOGGLE_BUTTON (check)));
 
 	if (result != GTK_RESPONSE_OK) {
 		gtk_widget_destroy (dialog);
@@ -8715,6 +8742,8 @@ show_lose_formatting_dialog (EHTMLEditorView *view)
 	}
 
 	gtk_widget_destroy (dialog);
+
+	g_object_unref (settings);
 
 	return TRUE;
 }
