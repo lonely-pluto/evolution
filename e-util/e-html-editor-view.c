@@ -8912,6 +8912,7 @@ static void
 html_editor_view_load_status_changed (EHTMLEditorView *view)
 {
 	WebKitDOMDocument *document;
+	WebKitDOMDOMWindow *dom_window;
 	WebKitDOMHTMLElement *body;
 	WebKitLoadStatus status;
 
@@ -8942,6 +8943,7 @@ html_editor_view_load_status_changed (EHTMLEditorView *view)
 	view->priv->reload_in_progress = FALSE;
 
 	document = webkit_web_view_get_dom_document (WEBKIT_WEB_VIEW (view));
+	dom_window = webkit_dom_document_get_default_view (document);
 	body = webkit_dom_document_get_body (document);
 
 	webkit_dom_element_remove_attribute (WEBKIT_DOM_ELEMENT (body), "style");
@@ -9001,6 +9003,14 @@ html_editor_view_load_status_changed (EHTMLEditorView *view)
 		e_html_editor_view_force_spell_check (view);
 	else
 		e_html_editor_view_turn_spell_check_off (view);
+
+	webkit_dom_event_target_add_event_listener (
+		WEBKIT_DOM_EVENT_TARGET (dom_window),
+		"scroll",
+		G_CALLBACK (body_scroll_event_cb),
+		FALSE,
+		view);
+
 }
 
 static void
