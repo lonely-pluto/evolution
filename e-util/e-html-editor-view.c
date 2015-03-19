@@ -2630,9 +2630,12 @@ force_spell_check_on_timeout (EHTMLEditorView *view)
 
 static void
 body_scroll_event_cb (WebKitDOMElement *element,
-                        WebKitDOMEvent *event,
-                        EHTMLEditorView *view)
+                      WebKitDOMEvent *event,
+                      EHTMLEditorView *view)
 {
+	if (!view->priv->inline_spelling)
+		return;
+
 	if (view->priv->spell_check_on_scroll_event_source_id > 0) {
 		g_source_remove (view->priv->spell_check_on_scroll_event_source_id);
 	}
