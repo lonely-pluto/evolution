@@ -8686,67 +8686,24 @@ process_content_for_html (EHTMLEditorView *view)
 static gboolean
 show_lose_formatting_dialog (EHTMLEditorView *view)
 {
-	gint result, spacing_message_area, spacing_parent;
-	GtkWidget *toplevel, *dialog, *check, *container, *widget;
+	gboolean lose;
+	GtkWidget *toplevel;
 	GtkWindow *parent = NULL;
-	GSettings *settings;
-
-	settings = e_util_ref_settings ("org.gnome.evolution.mail");
-	if (!g_settings_get_boolean (settings, "prompt-on-composer-mode-switch")) {
-		g_object_unref (settings);
-		return TRUE;
-	}
 
 	toplevel = gtk_widget_get_toplevel (GTK_WIDGET (view));
 
 	if (GTK_IS_WINDOW (toplevel))
 		parent = GTK_WINDOW (toplevel);
 
-	dialog = gtk_message_dialog_new (
-		parent,
-		GTK_DIALOG_DESTROY_WITH_PARENT,
-		GTK_MESSAGE_WARNING,
-		GTK_BUTTONS_NONE,
-		_("Turning HTML mode off will cause the text "
-		"to lose all formatting. Do you want to continue?"));
-	gtk_dialog_add_buttons (
-		GTK_DIALOG (dialog),
-		_("_Don't lose formatting"), GTK_RESPONSE_CANCEL,
-		_("_Lose formatting"), GTK_RESPONSE_OK,
-		NULL);
+	lose = e_util_prompt_user (
+		parent, "org.gnome.evolution.mail", "prompt-on-composer-mode-switch",
+		"mail-composer:prompt-composer-mode-switch", NULL);
 
-	container = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-	check = gtk_check_button_new_with_mnemonic (
-		_("Do not _show this message again"));
-	widget = gtk_message_dialog_get_message_area (GTK_MESSAGE_DIALOG (dialog));
-	spacing_message_area = gtk_box_get_spacing (GTK_BOX (widget));
-	widget = gtk_widget_get_parent (widget);
-	spacing_parent = gtk_box_get_spacing (GTK_BOX (widget));
-
-	gtk_widget_set_margin_left (check, spacing_message_area + spacing_parent);
-	gtk_widget_set_margin_right (check, spacing_message_area + spacing_parent);
-
-	gtk_box_pack_start (GTK_BOX (container), check, FALSE, FALSE, 0);
-	gtk_widget_show (check);
-
-	result = gtk_dialog_run (GTK_DIALOG (dialog));
-
-	g_settings_set_boolean (
-		settings,
-		"prompt-on-composer-mode-switch",
-		!gtk_toggle_button_get_active (
-			GTK_TOGGLE_BUTTON (check)));
-
-	if (result != GTK_RESPONSE_OK) {
-		gtk_widget_destroy (dialog);
+	if (!lose) {
 		/* Nothing has changed, but notify anyway */
 		g_object_notify (G_OBJECT (view), "html-mode");
 		return FALSE;
 	}
-
-	gtk_widget_destroy (dialog);
-
-	g_object_unref (settings);
 
 	return TRUE;
 }
