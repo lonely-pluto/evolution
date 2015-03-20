@@ -2554,7 +2554,7 @@ save_history_for_input (EHTMLEditorView *view)
 		parent_start = webkit_dom_node_get_parent_node (WEBKIT_DOM_NODE (element_start));
 		parent_end = webkit_dom_node_get_parent_node (WEBKIT_DOM_NODE (element_end));
 
-		while (!webkit_dom_node_is_same_node (parent_start, parent_end)) {
+		while (parent_start && parent_end && !webkit_dom_node_is_same_node (parent_start, parent_end)) {
 			webkit_dom_node_insert_before (
 				WEBKIT_DOM_NODE (fragment),
 				webkit_dom_node_clone_node (parent_start, FALSE),
